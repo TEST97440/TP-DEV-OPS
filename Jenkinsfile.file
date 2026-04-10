@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout Git') {
             steps {
                 // Remplace par ton vrai dépôt
-                git 'https://github.com/TON-USER/TON-REPO.git'
+                git 'https://github.com/TEST97440/TP-DEV-OPS.git'
             }
         }
 
