@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    environment {
+        // On définit l'adresse du registre local
+        REGISTRY = "localhost:5000"
+        IMAGE_NAME = "mon-app"
+        VERSION = "1.0.${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout Git') {
+            steps {
+                // Remplace par ton vrai dépôt
+                git 'https://github.com/TON-USER/TON-REPO.git'
+            }
+        }
+
+        stage('Install') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // On ajoute souvent || true si on veut que la pipeline continue 
+                // malgré les erreurs, mais pour un test c'est mieux de laisser échouer.
+                sh 'npm test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                // On build directement avec le bon tag pour le registre local
+                sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${VERSION} ."
+            }
+        }
+
+        stage('Tag Latest') {
+            steps {
+                // On crée un tag 'latest' pointant vers la version actuelle
+                sh "docker tag ${REGISTRY}/${IMAGE_NAME}:${VERSION} ${REGISTRY}/${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Push Local Registry') {
+            steps {
+                // On pousse la version spécifique ET le tag latest
+                sh "docker push ${REGISTRY}/${IMAGE_NAME}:${VERSION}"
+                sh "docker push ${REGISTRY}/${IMAGE_NAME}:latest"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline terminée avec succès ! Image disponible sur ${REGISTRY}/${IMAGE_NAME}:${VERSION}"
+        }
+        failure {
+            echo "La pipeline a échoué. Vérifiez les logs des tests ou du build Docker."
+        }
+    }
+}
